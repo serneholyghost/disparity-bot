@@ -3,8 +3,8 @@ import yfinance as yf
 from datetime import date, timedelta
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-BOT_TOKEN = "8714412200:AAGxFlUh_QoDz34axyfHPXXifRbQdQ0A7C0"
-CHAT_ID   = "6753118517"
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+CHAT_ID   = os.getenv("CHAT_ID", "")
 
 TICKERS = {
     "^KS11":     "KOSPI",
@@ -75,7 +75,4 @@ def send_alert():
     print("전송 완료\n", msg)
 
 if __name__ == "__main__":
-    scheduler = BlockingScheduler(timezone="Asia/Seoul")
-    scheduler.add_job(send_alert, "cron", hour=15, minute=35, day_of_week="mon-fri")
-    print("스케줄러 실행 중... 평일 15:35 자동 전송")
-    scheduler.start()
+    send_alert()
