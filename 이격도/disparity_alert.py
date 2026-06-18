@@ -1,7 +1,6 @@
 import requests
 import yfinance as yf
 from datetime import date, timedelta
-from apscheduler.schedulers.blocking import BlockingScheduler
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 CHAT_ID   = os.getenv("CHAT_ID", "")
