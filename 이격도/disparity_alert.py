@@ -1,3 +1,4 @@
+import os
 import requests
 import yfinance as yf
 from datetime import date, timedelta
