@@ -83,8 +83,9 @@ def send_alert():
         sign_p = "+" if r["price_change_pct"] >= 0 else ""
         sign_d = "+" if r["change_pt"] >= 0 else ""
         lines.append(
-            f"{emoji} {info['name']}  {sign_p}{r['price_change_pct']}%\n"
-            f"현재가: {r['price']:,}  50일MA: {r['ma50']:,}\n"
+            f"{emoji} {info['name']} ({sign_p}{r['price_change_pct']}%)\n"
+            f"현재가: {r['price']:,}\n"
+            f"50일MA: {r['ma50']:,}\n"
             f"이격도: {r['disparity']}% ({sign_d}{r['change_pt']}%pt)\n"
         )
     msg = "\n".join(lines)
