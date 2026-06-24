@@ -21,46 +21,36 @@ THRESHOLDS = {
 
 def get_emoji(ticker, disparity):
     t = THRESHOLDS[ticker]
-    if disparity >= t["red"]:        return "🔴"
-    elif disparity >= t["yellow"]:   return "🟡"
-    else:                            return "🟢"
-
-def get_current_price(yf_ticker):
-    tk = yf.Ticker(yf_ticker)
-    data = tk.history(period="1d", interval="1m")
-    if data.empty:
-        return None
-    return float(data["Close"].iloc[-1])
+    if disparity >= t["red"]:      return "🔴"
+    elif disparity >= t["yellow"]: return "🟡"
+    else:                          return "🟢"
 
 def get_ma50(fdr_ticker):
     from_date = (date.today() - timedelta(days=200)).strftime("%Y-%m-%d")
     df = fdr.DataReader(fdr_ticker, from_date)
     close = df["Close"].dropna()
     if len(close) < 51:
-        return None, None
-    ma50      = float(close.iloc[-50:].mean())
-    prev_ma50 = float(close.iloc[-51:-1].mean())
-    prev_price = int(close.iloc[-2])
-    return ma50, prev_ma50, prev_price
+        return None, None, None, None
+    today_price = int(close.iloc[-1])
+    ma50        = float(close.iloc[-50:].mean())
+    prev_price  = int(close.iloc[-2])
+    prev_ma50   = float(close.iloc[-51:-1].mean())
+    return today_price, ma50, prev_price, prev_ma50
 
 def get_disparity(ticker, info):
     try:
-        current_price = get_current_price(info["yf"])
-        if not current_price:
-            return None
-
         result = get_ma50(ticker)
         if result[0] is None:
             return None
-        ma50, prev_ma50, prev_price = result
+        today_price, ma50, prev_price, prev_ma50 = result
 
-        today_disp       = (current_price / ma50) * 100
+        today_disp       = (today_price / ma50) * 100
         prev_disp        = (prev_price / prev_ma50) * 100
         change_pt        = today_disp - prev_disp
-        price_change_pct = (current_price - prev_price) / prev_price * 100
+        price_change_pct = (today_price - prev_price) / prev_price * 100
 
         return {
-            "price":            int(current_price),
+            "price":            today_price,
             "ma50":             round(ma50),
             "disparity":        round(today_disp, 2),
             "change_pt":        round(change_pt, 2),
@@ -69,7 +59,6 @@ def get_disparity(ticker, info):
     except Exception as e:
         print(f"{ticker} 오류: {e}")
         return None
-
 
 def send_alert():
     now = date.today().strftime("%m/%d")
@@ -82,13 +71,12 @@ def send_alert():
         emoji  = get_emoji(ticker, r["disparity"])
         sign_p = "+" if r["price_change_pct"] >= 0 else ""
         sign_d = "+" if r["change_pt"] >= 0 else ""
-lines.append(
+        lines.append(
             f"{emoji} {info['name']}\n"
             f"현재가: {r['price']:,} ({sign_p}{r['price_change_pct']}%)\n"
             f"50일MA: {r['ma50']:,}\n"
             f"이격도: {r['disparity']}% ({sign_d}{r['change_pt']}%pt)\n"
         )
-
     msg = "\n".join(lines)
     requests.post(
         f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
