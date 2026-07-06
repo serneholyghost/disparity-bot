@@ -4,8 +4,8 @@ import sys
 import requests
 
 # ── 설정 ──────────────────────────────────────────────
-BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
-CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
+TELEGRAM_BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+TELEGRAM_CHAT_ID: ${{ secrets.CHAT_ID }}
 RAW_DATA = os.environ.get("SMM_DATA", "")
 
 CODE_RE = re.compile(r"^SMM-[A-Za-z0-9\-]+$")
