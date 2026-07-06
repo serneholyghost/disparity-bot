@@ -1,0 +1,31 @@
+name: SMM 2차전지 원자재 알림
+
+on:
+  workflow_dispatch:
+    inputs:
+      smm_data:
+        description: "SMM watchlist에서 복사한 텍스트를 그대로 붙여넣으세요"
+        required: true
+        type: string
+
+jobs:
+  send-alert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 파이썬 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 의존성 설치
+        run: pip install requests
+
+      - name: 파싱 및 텔레그램 전송
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SMM_DATA: ${{ github.event.inputs.smm_data }}
+        run: python SMM/parse_smm_and_send.py
