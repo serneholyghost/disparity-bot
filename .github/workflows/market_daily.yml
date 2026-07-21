@@ -2,7 +2,7 @@ name: 시황 데일리
 
 on:
   schedule:
-   - cron: '10 7 * * 1-5'
+   - cron: '35 6 * * 1-5'
   workflow_dispatch:
 
 jobs:
