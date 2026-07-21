@@ -33,18 +33,18 @@ def fetch_recent(code, days=10):
     return fdr.DataReader(code, from_date)
 
 
-def get_index_line():
-    parts = []
+def get_index_lines():
+    lines = []
     for code, name in INDEXES.items():
         try:
             df = fetch_recent(code)
             close  = int(df["Close"].iloc[-1])
             change = df["Change"].iloc[-1] * 100
             sign   = "+" if change >= 0 else ""
-            parts.append(f"{name} {close:,}({sign}{change:.2f}%)")
+            lines.append(f"{name} {close:,}pt({sign}{change:.2f}%)")
         except Exception as e:
-            parts.append(f"{name} 데이터 오류({e})")
-    return "  ".join(parts)
+            lines.append(f"{name} 데이터 오류({e})")
+    return lines
 
 
 def get_disparity_emoji(ticker, disparity):
@@ -92,6 +92,8 @@ def get_disparity(ticker):
 def get_disparity_lines():
     lines = []
     for ticker, name in DISPARITY_TICKERS.items():
+        if lines:
+            lines.append("")
         r = get_disparity(ticker)
         if not r:
             lines.append(f"{name}: 데이터 오류")
@@ -109,7 +111,7 @@ def get_disparity_lines():
 
 
 def get_news_lines():
-    lines = ["주요 뉴스"]
+    lines = ["📊주요 뉴스", ""]
     try:
         headers = {"User-Agent": "Mozilla/5.0"}
         r = requests.get(NEWS_RSS_URL, headers=headers, timeout=10)
@@ -128,12 +130,9 @@ def get_news_lines():
 
 def send_daily():
     today = date.today().strftime("%Y/%m/%d")
-    lines = [
-        f"📊 한국 주식 시황 데일리 ({today})",
-        "",
-        get_index_line(),
-        "",
-    ]
+    lines = [f"📊 한국 주식 시황 데일리 ({today})", ""]
+    lines += get_index_lines()
+    lines += [""]
     lines += get_disparity_lines()
     lines += [""]
     lines += get_news_lines()
