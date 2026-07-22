@@ -1,15 +1,14 @@
 import os
 import requests
 import FinanceDataReader as fdr
-import xml.etree.ElementTree as ET
 from datetime import date, timedelta
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 CHAT_ID   = os.getenv("CHAT_ID", "")
 
 INDEXES = {
-    "KS11": "코스피",
-    "KQ11": "코스닥",
+    "KS11": "KOSPI",
+    "KQ11": "KOSDAQ",
 }
 
 DISPARITY_TICKERS = {
@@ -23,9 +22,6 @@ DISPARITY_THRESHOLDS = {
     "005930": {"red": 140, "yellow": 125},
     "000660": {"red": 155, "yellow": 140},
 }
-
-NEWS_RSS_URL = "https://www.hankyung.com/feed/finance"
-NEWS_COUNT = 5
 
 
 def fetch_recent(code, days=10):
@@ -41,7 +37,8 @@ def get_index_lines():
             close  = int(df["Close"].iloc[-1])
             change = df["Change"].iloc[-1] * 100
             sign   = "+" if change >= 0 else ""
-            lines.append(f"{name} {close:,}pt({sign}{change:.2f}%)")
+            suffix = " & 12MF P/E 배" if code == "KS11" else ""
+            lines.append(f"{name} {close:,}pt({sign}{change:.2f}%){suffix}")
         except Exception as e:
             lines.append(f"{name} 데이터 오류({e})")
     return lines
@@ -92,8 +89,6 @@ def get_disparity(ticker):
 def get_disparity_lines():
     lines = []
     for ticker, name in DISPARITY_TICKERS.items():
-        if lines:
-            lines.append("")
         r = get_disparity(ticker)
         if not r:
             lines.append(f"{name}: 데이터 오류")
@@ -110,38 +105,19 @@ def get_disparity_lines():
     return lines
 
 
-def get_news_lines():
-    lines = ["📊주요 뉴스", ""]
-    try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get(NEWS_RSS_URL, headers=headers, timeout=10)
-        r.raise_for_status()
-        r.encoding = "utf-8"
-        root = ET.fromstring(r.content)
-        items = root.findall(".//item")[:NEWS_COUNT]
-        for i, item in enumerate(items, 1):
-            title = (item.findtext("title") or "").strip()
-            link  = (item.findtext("link") or "").strip()
-            lines.append(f"{i}. {title}\n{link}")
-    except Exception as e:
-        lines.append(f"뉴스를 가져오지 못했습니다: {e}")
-    return lines
-
-
 def send_daily():
-    today = date.today().strftime("%Y/%m/%d")
-    lines = [f"📊 한국 주식 시황 데일리 ({today})", ""]
+    today = date.today()
+    lines = [f"[한국 주식 시황 {today.year}년 {today.month}월 {today.day}일 데일리]"]
     lines += get_index_lines()
-    lines += [""]
+    lines += ["[주요 시황]", "", "[이격도]"]
     lines += get_disparity_lines()
-    lines += [""]
-    lines += get_news_lines()
     lines += [
         "",
-        "📊특징 종목",
+        "[특징 종목]",
+        "52주 신고가: ",
+        "그 외 관심 종목: ",
         "",
-        "52주 신고가:",
-        "그 외 관심 종목:",
+        "[개인 코멘트]",
     ]
 
     msg = "\n".join(lines)
